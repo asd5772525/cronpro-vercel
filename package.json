@@ -1,0 +1,23 @@
+{
+  "name": "cronpro-vercel",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CronPro 在线定时任务平台（Vercel + Turso 版）",
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "migrate:sqlite": "node scripts/migrate-sqlite.js",
+    "test": "node scripts/test-cron.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@libsql/client": "^0.14.0",
+    "@vercel/functions": "^1.5.2",
+    "bcryptjs": "^2.4.3",
+    "hono": "^4.6.14",
+    "luxon": "^3.5.0",
+    "nodemailer": "^6.9.16",
+    "undici": "^6.21.0"
+  }
+}
