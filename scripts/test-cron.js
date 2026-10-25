@@ -1,7 +1,7 @@
 // Cron 解析器自测：node scripts/test-cron.js
 import assert from 'node:assert/strict';
 import { DateTime } from 'luxon';
-import { CronExpr } from '../src/cron-expr.js';
+import { CronExpr } from '../src/lib/cron-expr.js';
 
 const at = (s, tz) => Math.floor(DateTime.fromISO(s, { zone: tz }).toSeconds());
 const fmt = (t, tz) => DateTime.fromSeconds(t, { zone: tz }).toFormat('yyyy-LL-dd HH:mm');

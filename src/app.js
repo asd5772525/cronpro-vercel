@@ -6,20 +6,20 @@ import { Hono } from 'hono';
 import bcrypt from 'bcryptjs';
 import { waitUntil } from '@vercel/functions';
 import { timingSafeEqual } from 'node:crypto';
-import { ensureSchema, dbConfigError, run, one } from './db.js';
-import { loadSettings, setting, settingSet, isInstalled, DEFAULTS, cronKey } from './settings.js';
-import { getSession, login, logout, isLoggedIn, csrfOk, flash } from './auth.js';
-import { tick, tickIfDue, runJobs } from './runner.js';
-import { jobGet, jobSave, JOB_DEFAULTS } from './jobs.js';
-import { fmtMs, now, dt, int } from './util.js';
-import { cpUrl } from './view.js';
-import { authPage, messagePage } from './pages/auth.js';
-import { pageDashboard } from './pages/dashboard.js';
-import { pageJobs, pageEdit, pageJob } from './pages/jobs.js';
-import { pageLogs, pageMails } from './pages/logs.js';
-import { pageSettings } from './pages/settings.js';
-import { pageStatus } from './pages/status.js';
-import { handleGetAction, handlePostAction, normalizeHash } from './actions.js';
+import { ensureSchema, dbConfigError, run, one } from './lib/db.js';
+import { loadSettings, setting, settingSet, isInstalled, DEFAULTS, cronKey } from './lib/settings.js';
+import { getSession, login, logout, isLoggedIn, csrfOk, flash } from './lib/auth.js';
+import { tick, tickIfDue, runJobs } from './core/runner.js';
+import { jobGet, jobSave, JOB_DEFAULTS } from './core/jobs.js';
+import { fmtMs, now, dt, int } from './lib/util.js';
+import { cpUrl } from './views/layout.js';
+import { authPage, messagePage } from './views/pages/auth.js';
+import { pageDashboard } from './views/pages/dashboard.js';
+import { pageJobs, pageEdit, pageJob } from './views/pages/jobs.js';
+import { pageLogs, pageMails } from './views/pages/logs.js';
+import { pageSettings } from './views/pages/settings.js';
+import { pageStatus } from './views/pages/status.js';
+import { handleGetAction, handlePostAction, normalizeHash } from './core/actions.js';
 
 const app = new Hono();
 
@@ -65,6 +65,7 @@ async function cronHandler(c) {
   } else {
     const r = await tick(isVercelCron ? 'vercel' : 'url');
     res = r.results ?? { info: r.skipped };
+    background(heartbeat(res));
   }
   if (c.req.query('format') === 'json') {
     const out = Object.entries(res).map(([id, r]) => (typeof r === 'object'
@@ -78,6 +79,14 @@ async function cronHandler(c) {
     lines.push(`#${id} ${r.title}  ${r.ok ? 'OK' : 'FAIL'}  HTTP ${r.code}  ${fmtMs(r.ms)}${r.error ? '  ' + r.error : ''}`);
   }
   return c.text(lines.join('\n') + '\n');
+}
+/** 停跳报警：每次调度完成后 ping 外部监控（healthchecks.io 等），长时间没收到 ping 由监控方报警 */
+async function heartbeat(res) {
+  const url = process.env.HEARTBEAT_URL;
+  if (!url) return;
+  const failed = Object.values(res).some((r) => typeof r === 'object' && !r.ok);
+  const target = failed && process.env.HEARTBEAT_FAIL_ON_JOB_ERROR === '1' ? url.replace(/\/$/, '') + '/fail' : url;
+  try { await fetch(target, { signal: AbortSignal.timeout(5000) }); } catch { /* 忽略监控自身的故障 */ }
 }
 app.get('/cron', cronHandler);
 app.get('/cron.php', cronHandler);

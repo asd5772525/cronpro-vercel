@@ -13,7 +13,7 @@
 import { createClient } from '@libsql/client';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ensureSchema, db } from '../src/db.js';
+import { ensureSchema, db } from '../src/lib/db.js';
 
 const src = process.argv[2];
 const force = process.argv.includes('--force');
@@ -57,7 +57,7 @@ await copyTable('logs');
 await copyTable('mail_log');
 await copyTable('events');
 // 迁移后重新计算下次执行时间
-const { jobNextRun } = await import('../src/cron-expr.js');
+const { jobNextRun } = await import('../src/lib/cron-expr.js');
 const jobs = (await to.execute('SELECT id, cron, tz, enabled FROM jobs')).rows;
 for (const j of jobs) await to.execute({ sql: 'UPDATE jobs SET next_run = ? WHERE id = ?', args: [Number(j.enabled) ? jobNextRun(j.cron, j.tz) : 0, j.id] });
 console.log('完成！请用原来的管理员账号登录，并在 Vercel 环境变量中设置 SMTP_PASS。');

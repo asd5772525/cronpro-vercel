@@ -1,0 +1,12 @@
+# 兜底触发器（GitHub Actions）。注意：GitHub 的定时任务常延迟 10–30 分钟，只适合当第三重保险。
+# 放到仓库的 .github/workflows/cronpro.yml，并在仓库 Settings → Secrets 添加 CRONPRO_URL。
+name: CronPro trigger
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: curl -fsS --max-time 60 "${{ secrets.CRONPRO_URL }}"
