@@ -4,13 +4,12 @@
 
 本版本由 PHP + SQLite 改写为 **Node.js（Hono）+ Turso（libSQL 云端 SQLite）**，可直接部署到 Vercel。功能、界面与 PHP 版保持一致，旧的导出文件和旧数据库都能导入。
 
-- [一、部署到 Vercel](#一部署到-vercel约-10-分钟)
-- [二、让任务准时执行（必读）](#二让任务准时执行必读)
-- [三、从 PHP 版迁移](#三从-php-版迁移)
-- [四、环境变量](#四环境变量)
-- [五、本地开发](#五本地开发)
-- [六、目录结构](#六目录结构)
-- [七、常见问题](#七常见问题)
+- [一、部署到 Vercel](#部署到-vercel约-10-分钟)
+- [二、让任务准时执行（必读）](#让任务准时执行必读)
+- [三、环境变量](#环境变量)
+- [四、本地开发](#本地开发)
+- [五、目录结构](#目录结构)
+- [六、常见问题](#常见问题)
 
 
 ## 一、部署到 Vercel（约 10 分钟）
@@ -67,24 +66,8 @@ Serverless 没有常驻进程，需要外部每分钟来“敲一次门”。触
 - **保活类任务加关键字判定**：休眠中或构建中的页面也可能返回 200，只看状态码会“假成功”。在任务里填一个页面上稳定出现的关键字，并开 1 次重试。
 - 任务很多时，调低「单次调度最多执行」或提高并发；超时的任务会被自动压缩到剩余时间内。
 
-## 三、从 PHP 版迁移
 
-**只迁任务配置**：旧后台「系统设置 → 导入导出」下载 JSON，新后台导入即可。
-
-**完整迁移（任务 + 执行记录 + 账号）**：
-
-```bash
-npm install
-TURSO_DATABASE_URL=libsql://xxx.turso.io TURSO_AUTH_TOKEN=xxx \
-  npm run migrate:sqlite -- /旧站/data/cronpro.sqlite
-```
-
-- 任务 ID 不变，管理员账号密码沿用（PHP 的 `$2y$` bcrypt 哈希可直接校验）。
-- SMTP 密码**不会**迁移，请设置 `SMTP_PASS` 环境变量。
-- 旧地址 `index.php`、`cron.php?key=`、`trigger.php`、`status.php` 均保留兼容，外部监控里的地址只需换域名（触发密钥随数据库一起迁移）。
-- 旧数据库含账号、密钥和任务地址，迁移完请勿把它放进代码仓库。
-
-## 四、环境变量
+## 三、环境变量
 
 参考 `.env.example`。
 
@@ -101,7 +84,7 @@ TURSO_DATABASE_URL=libsql://xxx.turso.io TURSO_AUTH_TOKEN=xxx \
 | `SESSION_SECRET` | 否 | Cookie 签名密钥，不填则自动生成并存入数据库 |
 | `TICK_BUDGET_SECONDS` | 否 | 单次调度时间预算（默认 50），需小于 `maxDuration` |
 
-## 五、本地开发
+## 四、本地开发
 
 需要 Node.js 20+。
 
@@ -111,7 +94,7 @@ npm run dev        # http://localhost:3000，数据存在 data/local.db
 npm test           # Cron 解析器自测
 ```
 
-## 六、目录结构
+## 五、目录结构
 
 ```
 api/
@@ -144,7 +127,7 @@ triggers/
 vercel.json             路由重写、函数时长、Vercel Cron
 ```
 
-## 七、常见问题
+## 六、常见问题
 
 **任务没按时跑？** 先在浏览器打开 `https://你的域名/cron?key=密钥`，能看到执行结果说明程序正常，问题在触发器；再看 cron-job.org 的执行历史是否每分钟都有记录。
 
